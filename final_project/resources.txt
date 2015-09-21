@@ -1,0 +1,4 @@
+Resources used for this project were:
+
+1) Udacity Intro to Machine Learning Class
+2) sklearn webpage for functions used

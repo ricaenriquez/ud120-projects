@@ -7,12 +7,9 @@ import pickle
 
 from outlier_cleaner import outlierCleaner
 
-
 ### load up some practice data with outliers in it
 ages = pickle.load( open("practice_outliers_ages.pkl", "r") )
 net_worths = pickle.load( open("practice_outliers_net_worths.pkl", "r") )
-
-
 
 ### ages and net_worths need to be reshaped into 2D numpy arrays
 ### second argument of reshape command is a tuple of integers: (n_rows, n_columns)
@@ -21,20 +18,21 @@ net_worths = pickle.load( open("practice_outliers_net_worths.pkl", "r") )
 ages       = numpy.reshape( numpy.array(ages), (len(ages), 1))
 net_worths = numpy.reshape( numpy.array(net_worths), (len(net_worths), 1))
 from sklearn.cross_validation import train_test_split
-ages_train, ages_test, net_worths_train, net_worths_test = train_test_split(ages, net_worths, test_size=0.1, random_state=42)
+ages_train, ages_test, net_worths_train, net_worths_test = \
+    train_test_split(ages, net_worths, test_size=0.1, random_state=42)
 
 ### fill in a regression here!  Name the regression object reg so that
 ### the plotting code below works, and you can see what your regression looks like
 
+from sklearn.linear_model import LinearRegression
 
+clf = LinearRegression()
+reg = clf.fit(ages_train, net_worths_train)
 
-
-
-
-
-
-
-
+print "The slope of the regression line is", reg.coef_[0][0]
+print "The intercept of the regression line is", reg.intercept_[0]
+print "The score of the regression line with test data is", \
+    reg.score(ages_test, net_worths_test)
 
 try:
     plt.plot(ages, reg.predict(ages), color="blue")
@@ -46,18 +44,13 @@ plt.show()
 
 ### identify and remove the most outlier-y points
 cleaned_data = []
+
 try:
     predictions = reg.predict(ages_train)
     cleaned_data = outlierCleaner( predictions, ages_train, net_worths_train )
 except NameError:
     print "your regression object doesn't exist, or isn't name reg"
     print "can't make predictions to use in identifying outliers"
-
-
-
-
-
-
 
 ### only run this code if cleaned_data is returning data
 if len(cleaned_data) > 0:
@@ -77,8 +70,10 @@ if len(cleaned_data) > 0:
     plt.xlabel("ages")
     plt.ylabel("net worths")
     plt.show()
-
+    print "The slope of the regression line is", reg.coef_[0][0]
+    print "The intercept of the regression line is", reg.intercept_[0]
+    print "The score of the regression line with test data is", \
+        reg.score(ages_test, net_worths_test)
 
 else:
     print "outlierCleaner() is returning an empty list, no refitting to be done"
-
