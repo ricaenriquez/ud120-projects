@@ -20,24 +20,25 @@ people = data_dict.keys()
 npeople = len(data_dict.keys())
 print "There are", npeople, "people in the dataset."
 print "There are", len(data_dict[people[0]]), "features per person."
-
 npoi = 0
 for person in data_dict:
     if data_dict[person]["poi"]:
         npoi += 1
 print "There are", npoi, "POIs in the dataset."
-
 # Make an array of all the features in the data set
-features = []
+features_list = []
+features_list.append("poi")
 for feat in data_dict[people[0]]:
-    features.append(feat)
+    if feat != "poi" and feat != "email_address":
+        features_list.append(feat)
+"""
 
+""" SUPPORT CODE
 # Make dictionary of the number of NaNs for each feature for all the people,
 # POIs, and non-POIs.
 nnan = {}
 nnan["general"] = {}
-
-for feat in features:
+for feat in features_list:
     nnan["general"][feat] = 0
     nnan["poi"][feat] = 0
     nnan["not_poi"][feat] = 0
@@ -48,7 +49,6 @@ for feat in features:
                 nnan["poi"][feat] += 1
             else:
                 nnan["not_poi"][feat] += 1
-
 # Write dictionary to CSV file
 import csv
 with open("nnans.csv", "wb") as csvfile:
@@ -59,19 +59,23 @@ with open("nnans.csv", "wb") as csvfile:
         f.writerow([feat, nnan["general"][feat]*1.0/npeople,
                     nnan["poi"][feat]*1.0/npoi,
                     nnan["not_poi"][feat]*1.0/(npeople-npoi)])
-"""
+# """
 
 # Task 2: Select what financial features to use
-""" SUPPORT CODE
+# """ SUPPORT CODE
 features_list = ["poi", "salary", "total_payments", "bonus", "deferred_income",
                  "total_stock_value", "expenses", "exercised_stock_options",
                  "other", "long_term_incentive", "restricted_stock"]
-"""
+# """
+
 
 # Task 3: Remove outliers
+# for key in data_dict.keys():
+#     print key
 data_dict.pop("TOTAL", 0)
-data_dict["BHATNAGAR SANJAY"]["restricted_stock"] = \
-    -data_dict["BHATNAGAR SANJAY"]["restricted_stock"]
+data_dict.pop("THE TRAVEL AGENCY IN THE PARK", 0)
+# data_dict["BHATNAGAR SANJAY"]["restricted_stock"] = \
+#     -data_dict["BHATNAGAR SANJAY"]["restricted_stock"]
 
 """ SUPPORT CODE
 data = featureFormat(data_dict, features_list)
@@ -93,7 +97,6 @@ for feat in features_list[2:]:
     matplotlib.pyplot.xlabel("salary")
     matplotlib.pyplot.ylabel(feat)
     matplotlib.pyplot.show()
-
 # Explore outliers in total_payments, salary, and restricted stock
 for key in data_dict:
     if (data_dict[key]["total_payments"] > 1e8) and \
@@ -102,7 +105,6 @@ for key in data_dict:
                 (data_dict[key]["salary"] != "NaN"):
             print key, data_dict[key]["total_payments"], \
                 data_dict[key]["salary"], data_dict[key]["poi"]
-
 for key in data_dict:
     if (data_dict[key]["restricted_stock"] < 0):
         if (data_dict[key]["restricted_stock"] != "NaN"):
@@ -139,52 +141,46 @@ for name in data_dict:
     data_dict[name]["fraction_to_poi"] = fraction_to_poi
 
 # Add these new features to the features list
-""" SUPPORT CODE
+# """ SUPPORT CODE
 features_list.append("fraction_from_poi")
 features_list.append("fraction_to_poi")
-
 # Recreate the arrays with the financial features and new e-mail features
- data = featureFormat(data_dict, features_list, sort_keys=True)
+data = featureFormat(data_dict, features_list, sort_keys=True)
+# """
 
 # Task 5: Intelligently Select Features
+# """SUPPORT CODE
 label, features = targetFeatureSplit(data)
-"""
-
 # First scale the features
-"""SUPPORT CODE
 scaler = MinMaxScaler()
 scaled_features = scaler.fit_transform(features)
-"""
+# """
 
-# Use feature selection algorithms to pick the top five features
+# Use feature selection algorithms to pick the top seven features
 """SUPPORT CODE
 from sklearn.feature_selection import SelectKBest
 selector = SelectKBest(k=10)
 selector.fit(scaled_features, label)
 print selector.get_support()
+print selector.scores_
 
 from sklearn.linear_model import RandomizedLasso
 selector = RandomizedLasso(alpha=0.0008)
 selector.fit(scaled_features, label)
 print selector.get_support()
+print selector.scores_
 
 from sklearn.feature_selection import RFE
 from sklearn.svm import LinearSVC
 selector = RFE(estimator=LinearSVC(), n_features_to_select=10)
 selector.fit(scaled_features, label)
 print selector.support_
+print selector.ranking_
 """
 
 features_list = ["poi", "salary", "bonus", "deferred_income", "total_stock_value",
                  "expenses", "exercised_stock_options", "long_term_incentive",
                  "fraction_to_poi"]
-
-data = featureFormat(data_dict, features_list, sort_keys = True)
-labels, features = targetFeatureSplit(data)
-
-from sklearn.cross_validation import train_test_split
-features_train, features_test,labels_train, labels_test = \
-    train_test_split(features, labels, test_size=0.3, random_state=5)
 
 # Task 6: Try a varity of classifiers
 """ SUPPORT CODE
@@ -193,27 +189,22 @@ print "AdaBoost"
 clf = Pipeline([("scale", MinMaxScaler()),
                 ("ada", AdaBoostClassifier(random_state=5))])
 test_classifier(clf, data_dict, features_list)
-
 print "RandomForest"
 clf = Pipeline([("scale", MinMaxScaler()),
                 ("ranfor", RandomForestClassifier(random_state=5))])
 test_classifier(clf, data_dict, features_list)
-
 print "Bagging"
 clf = Pipeline([("scale", MinMaxScaler()),
                 ("bagging", BaggingClassifier(random_state=5))])
 test_classifier(clf, data_dict, features_list)
-
 print "ExtraTree"
 clf = Pipeline([("scale", MinMaxScaler()),
                 ("extra", ExtraTreesClassifier(random_state=5))])
 test_classifier(clf, data_dict, features_list)
-
 print "AdaBoost Random"
 clf = Pipeline([("scale", MinMaxScaler()),
                 ("ada", AdaBoostClassifier(random_state=5, base_estimator=RandomForestClassifier()))])
 test_classifier(clf, data_dict, features_list)
-
 print "AdaBoost ExtraTree"
 clf = Pipeline([("scale", MinMaxScaler()),
                 ("ada", AdaBoostClassifier(random_state=5, base_estimator=ExtraTreesClassifier()))])
@@ -223,8 +214,13 @@ test_classifier(clf, data_dict, features_list)
 # Task 7: Tune your classifier to achieve better than .3 precision and recall
 # using our testing script.
 """SUPPORT CODE
-from sklearn.grid_search import GridSearchCV
+data = featureFormat(data_dict, features_list, sort_keys = True)
+labels, features = targetFeatureSplit(data)
 
+from sklearn.cross_validation import train_test_split
+features_train, features_test,labels_train, labels_test = \
+    train_test_split(features, labels, test_size=0.3, random_state=5)
+from sklearn.grid_search import GridSearchCV
 ada = AdaBoostClassifier(random_state=5)
 params = {'algorithm': ('SAMME', "SAMME.R"), 'n_estimators': [40, 50, 60],
           'learning_rate': [.5, .75, 1.0, 1.25]}
@@ -238,12 +234,10 @@ print clf.best_estimator_
 # al_var = ["SAMME", "SAMME.R"]
 # learn_var = [.3, .4, .5, .6, .7, .8, .9, 1., 1.1, 1.2]
 # est_var = [50, 60, 70, 80]
-
 # Second loop
 al_var = ["SAMME.R"]
 learn_var = [.8, .85, .9, .95, 1.]
 est_var = [50, 60, 65, 70, 75, 80]
-
 als = []
 learning = []
 est = []
@@ -263,7 +257,6 @@ for i in al_var:
             prec.append(precision)
             rec.append(recall)
             f.append(f1)
-
 import pandas as pd
 df = pd.DataFrame({'algorithm': pd.Series(als),
                   'learning': pd.Series(learning),
@@ -273,16 +266,14 @@ df = pd.DataFrame({'algorithm': pd.Series(als),
                   'f1': pd.Series(f)})
 print "Max F1"
 print df[df["f1"] == max(df[(df["precision"] >= 0.3) & (df["recall"] >= 0.3)]["f1"])]
-
 print "Max recall"
 print df[df["recall"] == max(df[df["precision"] >= 0.3]["recall"])]
-
 print "Max precision"
 print df[(df["precision"] == max(df[df["recall"] >= 0.3]["precision"]))]
 """
 
 # """SUPPORT CODE
-print "AdaBoost"
+print "Final AdaBoost Classifier"
 ada = AdaBoostClassifier(random_state=5, n_estimators=70, learning_rate=0.9)
 clf = Pipeline([("scale", MinMaxScaler()),
                 ("ada", ada)])
@@ -292,3 +283,13 @@ clf = Pipeline([("scale", MinMaxScaler()),
 # Dump your classifier, dataset, and features_list so
 # anyone can run/check your results.
 dump_classifier_and_data(clf, data_dict, features_list)
+
+
+# Code to print out intermediate metrics
+"""SUPPORT CODE
+print "AdaBoost without fraction_to_poi"
+ada = AdaBoostClassifier(random_state=5, n_estimators=70, learning_rate=0.9)
+clf = Pipeline([("scale", MinMaxScaler()),
+                ("ada", ada)])
+test_classifier(clf, data_dict, features_list[0:-1])
+# """
